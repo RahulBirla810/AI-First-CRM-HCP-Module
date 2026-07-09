@@ -4,13 +4,49 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
 
-from .database import engine, Base, get_db
+from .database import engine, Base, get_db, SessionLocal
 from . import models
 from . import schemas
 from .agent import InteractionAgent
 
 # Initialize DB tables
 Base.metadata.create_all(bind=engine)
+
+# Auto-seed database tables on startup if empty
+db = SessionLocal()
+try:
+    if db.query(models.HCP).count() == 0:
+        hcps = [
+            models.HCP(name="Dr. Sarah Jenkins", specialty="Cardiology", clinic="Heart Care Clinic, NY", email="sarah.jenkins@heartcare.org", phone="555-0199", last_interaction_date="2026-06-15"),
+            models.HCP(name="Dr. Robert Chen", specialty="Oncology", clinic="Metropolitan Oncology Center", email="r.chen@metonc.com", phone="555-0144", last_interaction_date="2026-06-20"),
+            models.HCP(name="Dr. Emily Taylor", specialty="Endocrinology", clinic="Diabetes & Thyroid Center", email="emily.taylor@diabetestc.org", phone="555-0177", last_interaction_date="2026-05-10"),
+            models.HCP(name="Dr. James Patel", specialty="Cardiology", clinic="Cardiovascular Associates", email="j.patel@cardioassoc.com", phone="555-0122", last_interaction_date="2026-07-01"),
+        ]
+        db.add_all(hcps)
+        
+    if db.query(models.Material).count() == 0:
+        materials = [
+            models.Material(name="OncoBoost Phase III Clinical Trial Results PDF", type="Clinical Paper", description="Comprehensive study on efficacy and side effects of OncoBoost in oncology patients."),
+            models.Material(name="CardioCare Efficacy Brochure", type="PDF Brochure", description="Visual patient benefits, dosage charts, and cardiovascular safety profile of CardioCare."),
+            models.Material(name="ThyroGlow Prescribing Information", type="Slide Deck", description="Full prescribing guide, indications, contraindications, and dose titration guidelines for ThyroGlow."),
+        ]
+        db.add_all(materials)
+
+    if db.query(models.Sample).count() == 0:
+        samples = [
+            models.Sample(name="OncoBoost", dosage="10mg", stock_quantity=100),
+            models.Sample(name="CardioCare", dosage="20mg", stock_quantity=250),
+            models.Sample(name="ThyroGlow", dosage="50mcg", stock_quantity=150),
+        ]
+        db.add_all(samples)
+        
+    db.commit()
+    print("Database initialized and auto-seeded successfully!")
+except Exception as e:
+    db.rollback()
+    print(f"Failed to auto-seed database on startup: {e}")
+finally:
+    db.close()
 
 app = FastAPI(title="AI-First CRM HCP Module Backend")
 
