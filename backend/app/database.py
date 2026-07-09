@@ -23,26 +23,23 @@ if DATABASE_URL.startswith("mysql"):
             password = ""
         db_name = url.path.lstrip('/')
         
-        # Connect to MySQL server directly without database to create it if needed
-        conn = pymysql.connect(
-            host=host,
-            port=port,
-            user=user,
-            password=password
-        )
         try:
-            with conn.cursor() as cursor:
-                cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`")
-            conn.commit()
-            print(f"MySQL database '{db_name}' verified or created.")
-        finally:
-            conn.close()
-    except Exception as e:
-        print(f"\n[CRITICAL ERROR] Failed to connect to MySQL database at '{host}:{port}' or create database '{db_name}'.")
-        print(f"Error details: {e}")
-        print("Please ensure your MySQL service is running and credentials in backend/.env are correct.\n")
-        # We do not fall back. We let the exception propagate so the server startup fails visibly.
-        raise e
+            conn = pymysql.connect(
+                host=host,
+                port=port,
+                user=user,
+                password=password
+            )
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`")
+                conn.commit()
+                print(f"MySQL database '{db_name}' verified or created.")
+            finally:
+                conn.close()
+        except Exception as e:
+            print(f"\n[WARNING] Direct MySQL database creation/verification failed: {e}")
+            print("Proceeding to establish connection via SQLAlchemy engine...\n")
 
 # Create engine for MySQL
 engine = create_engine(DATABASE_URL)
