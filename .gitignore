@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+frontend/dist/
+backend/venv/
+
+# Environment files and credentials
+.env
+.env.*
+backend/.env
+
+# Local Databases
+backend/crm.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp

@@ -1,0 +1,14 @@
+# Local Environment Configuration
+.env
+.env.*
+
+# Local SQLite Database
+crm.db
+
+# Virtual Environment
+venv/
+.venv/
+
+# Pycache
+__pycache__/
+*.py[cod]
