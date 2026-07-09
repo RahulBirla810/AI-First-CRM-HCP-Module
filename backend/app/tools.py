@@ -95,7 +95,11 @@ def get_marketing_materials_and_samples() -> str:
         db.close()
 
 @tool
-def create_followup_task(title: str, due_date: str, interaction_id: int) -> str:
+def create_followup_task(
+    title: str = "Send clinical materials",
+    due_date: str = "2026-07-24",
+    interaction_id: Optional[int] = None
+) -> str:
     """
     Schedules a follow-up action or task for a given date.
     Args:
@@ -105,6 +109,12 @@ def create_followup_task(title: str, due_date: str, interaction_id: int) -> str:
     Returns:
         JSON string confirming task creation success or failure.
     """
+    if interaction_id is None:
+        return json.dumps({
+            "success": False,
+            "error": "Missing required parameter: interaction_id. A task must be scheduled for an existing logged interaction."
+        })
+
     db = SessionLocal()
     try:
         # 1. Validate interaction exists

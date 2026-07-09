@@ -6,7 +6,7 @@ import sys
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-API_BASE = "http://127.0.0.1:8000"
+API_BASE = "https://ai-first-crm-hcp-module-production-0ddc.up.railway.app"
 
 def test_production_rules():
     print("==================================================")
