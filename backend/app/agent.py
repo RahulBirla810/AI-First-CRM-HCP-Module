@@ -37,6 +37,7 @@ def extract_entities_node(state: AgentState) -> Dict[str, Any]:
     use_llm = state["use_llm"]
     
     updated_form = dict(current_form) if current_form else {
+        "id": None,
         "hcp_id": None,
         "date": "",
         "time": "",
@@ -88,16 +89,18 @@ Guidelines:
    - Match materials shared to the ID in the Materials list.
    - Match samples distributed to the ID and dosage in the Samples list.
 3. Automatically generate a list of "AI Suggested Follow-ups" based on the topics discussed.
-4. Output your response as a JSON object containing:
+4. IMPORTANT: You can ONLY schedule a follow-up task (execute_tool: "create_followup_task") if the interaction has already been logged (i.e. the "id" field in the current form state is a valid integer). If the "id" is null or missing, do NOT run the "create_followup_task" tool. Instead, set "execute_tool" to null, and instruct the user in your reply to log the interaction first (by typing "Log interaction" or clicking submit) before scheduling tasks.
+5. Output your response as a JSON object containing:
    - "reply": A friendly, professional markdown reply to the representative.
    - "form_state": The updated/extracted fields of the interaction form (must match the InteractionBase schema).
-   - "execute_tool": Optional action like "log_interaction" or "edit_interaction".
+   - "execute_tool": Optional action like "log_interaction" or "edit_interaction" or "create_followup_task" (only if id is valid).
    - "tool_params": Parameters for that action.
 
 Response JSON format:
 {{
   "reply": "Assistant response string...",
   "form_state": {{
+    "id": int_or_null,
     "hcp_id": int_or_null,
     "date": "YYYY-MM-DD",
     "time": "HH:MM",
