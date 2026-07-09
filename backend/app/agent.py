@@ -116,7 +116,7 @@ Response JSON format:
 }}
 Ensure your output is STRICTLY valid JSON.
 """
-            model_name = os.getenv("GROQ_MODEL", "gemma2-9b-it")
+            model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
             chat_completion = client.chat.completions.create(
                 messages=[
                     {"role": "system", "content": system_prompt},

@@ -24,7 +24,7 @@ An **AI-first Customer Relationship Management (CRM) system** specializing in th
 
 This project was built for the assignment submission to demonstrate an **AI-First UX pattern** in medical sales operations. Instead of manually filling out tedious database forms, representatives can enter unstructured narrative notes (e.g. *"Had a friendly meeting with Dr. Jenkins today at Heart Care Clinic. We discussed CardioCare samples and I left 5 units. She was highly receptive."*). 
 
-The backend agent—implemented using a formal **LangGraph StateGraph workflow**—parses this input, queries the database to match entities, validates inventories, auto-populates the forms, and suggests appropriate follow-up actions using the Groq `gemma2-9b-it` LLM.
+The backend agent—implemented using a formal **LangGraph StateGraph workflow**—parses this input, queries the database to match entities, validates inventories, auto-populates the forms, and suggests appropriate follow-up actions using the Groq `llama-3.3-70b-versatile` LLM.
 
 ---
 
@@ -33,7 +33,7 @@ The backend agent—implemented using a formal **LangGraph StateGraph workflow**
 * **Frontend**: React (Vite), Redux Toolkit (state sync), Vanilla CSS (Glassmorphism layout).
 * **Backend**: FastAPI, SQLAlchemy ORM, PyMySQL (MySQL driver).
 * **AI Orchestration**: LangGraph `StateGraph` workflow engine.
-* **LLM Engine**: Groq Cloud API (`gemma2-9b-it`).
+* **LLM Engine**: Groq Cloud API (`llama-3.3-70b-versatile`).
 * **Database**: MySQL Server.
 * **Deployment**: Netlify (Frontend SPA), Railway (Backend containerized API & MySQL).
 
