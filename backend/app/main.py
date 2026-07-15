@@ -64,6 +64,10 @@ app.add_middleware(
 
 agent = InteractionAgent()
 
+@app.get("/")
+def read_root():
+    return {"message": "AI First CRM HCP Module API is running successfully"}
+
 # ----------------- DB Seeding Endpoint -----------------
 @app.post("/init-db")
 def initialize_database(db: Session = Depends(get_db)):
