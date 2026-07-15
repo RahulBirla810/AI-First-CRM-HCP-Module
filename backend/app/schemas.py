@@ -60,6 +60,7 @@ class DistributedSample(BaseModel):
 
 # Interaction Schemas
 class InteractionBase(BaseModel):
+    id: Optional[int] = None
     hcp_id: int
     date: str
     time: str

@@ -302,6 +302,7 @@ def chat_with_agent(req: schemas.ChatRequest):
     form_dict = {}
     if req.current_form_state:
         form_dict = {
+            "id": req.current_form_state.id,
             "hcp_id": req.current_form_state.hcp_id,
             "date": req.current_form_state.date,
             "time": req.current_form_state.time,
@@ -324,6 +325,7 @@ def chat_with_agent(req: schemas.ChatRequest):
     if f_state:
         # Load hcp if hcp_id is set
         pydantic_form = schemas.InteractionBase(
+            id=f_state.get("id"),
             hcp_id=f_state.get("hcp_id") or 0,
             date=f_state.get("date") or "",
             time=f_state.get("time") or "",
