@@ -93,7 +93,7 @@ Guidelines:
 5. Output your response as a JSON object containing:
    - "reply": A friendly, professional markdown reply to the representative.
    - "form_state": The updated/extracted fields of the interaction form (must match the InteractionBase schema).
-   - "execute_tool": Optional action like "log_interaction" or "edit_interaction" or "create_followup_task" (only if id is valid).
+   - "execute_tool": Optional action like "log_interaction" or "edit_interaction" or "search_hcp" or "search_materials" or "search_samples" or "create_followup_task" (only if id is valid).
    - "tool_params": Parameters for that action.
 
 Response JSON format:
@@ -114,12 +114,12 @@ Response JSON format:
     "follow_up_actions": "Text summary...",
     "ai_suggested_followups": ["Action Item 1"]
   }},
-  "execute_tool": "log_interaction" | "edit_interaction" | "create_followup_task" | null,
+  "execute_tool": "log_interaction" | "edit_interaction" | "search_hcp" | "search_materials" | "search_samples" | "create_followup_task" | null,
   "tool_params": {{ ... }}
 }}
 Ensure your output is STRICTLY valid JSON.
 """
-            model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+            model_name = os.getenv("GROQ_MODEL", "gemma2-9b-it")
             chat_completion = client.chat.completions.create(
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -182,7 +182,8 @@ Ensure your output is STRICTLY valid JSON.
             updated_form["interaction_type"] = "Meeting"
 
         # 4. Extract Materials
-        tools_called.append("get_marketing_materials_and_samples")
+        tools_called.append("search_materials")
+        tools_called.append("search_samples")
         extracted_materials = list(updated_form.get("materials_shared", []))
         for mat in materials:
             if mat.name.lower() in message_lower or ("pdf" in message_lower and "pdf" in mat.name.lower()) or ("brochure" in message_lower and "brochure" in mat.name.lower()):

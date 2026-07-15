@@ -19,11 +19,13 @@ class HCP(HCPBase):
     class Config:
         from_attributes = True
 
-# Material Schemas
 class MaterialBase(BaseModel):
     name: str
     type: str
     description: Optional[str] = None
+
+class MaterialCreate(MaterialBase):
+    pass
 
 class Material(MaterialBase):
     id: int
@@ -36,6 +38,9 @@ class SampleBase(BaseModel):
     name: str
     dosage: str
     stock_quantity: int
+
+class SampleCreate(SampleBase):
+    pass
 
 class Sample(SampleBase):
     id: int
@@ -90,17 +95,17 @@ class Interaction(BaseModel):
     class Config:
         from_attributes = True
 
-# FollowUpTask Schemas
-class FollowUpTaskBase(BaseModel):
+# Followup Schemas
+class FollowupBase(BaseModel):
     title: str
     due_date: str
     status: str = "Pending"
     interaction_id: int
 
-class FollowUpTaskCreate(FollowUpTaskBase):
+class FollowupCreate(FollowupBase):
     pass
 
-class FollowUpTask(FollowUpTaskBase):
+class Followup(FollowupBase):
     id: int
 
     class Config:

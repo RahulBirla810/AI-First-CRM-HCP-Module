@@ -1,7 +1,7 @@
 import requests
 import json
 
-API_BASE = "https://ai-first-crm-hcp-module-production-0ddc.up.railway.app"
+API_BASE = "http://localhost:8000"
 
 def run_tests():
     print("==================================================")
@@ -28,28 +28,31 @@ def run_tests():
 
     # Test 3: Get Materials & Samples
     print("\n--- Test 3: Fetching Materials & Samples Catalog ---")
-    res = requests.get(f"{API_BASE}/materials-samples")
-    assert res.status_code == 200
-    catalog = res.json()
-    print(f"Success! Retrieved {len(catalog['materials'])} materials and {len(catalog['samples'])} samples.")
+    res_m = requests.get(f"{API_BASE}/materials")
+    res_s = requests.get(f"{API_BASE}/samples")
+    assert res_m.status_code == 200
+    assert res_s.status_code == 200
+    materials = res_m.json()
+    samples = res_s.json()
+    print(f"Success! Retrieved {len(materials)} materials and {len(samples)} samples.")
 
     # Test 4: Create Interaction via Form (Structured Log)
     print("\n--- Test 4: Creating Interaction via Form (Structured Log) ---")
     payload = {
-        "hcp_id": 2, # Dr. Robert Chen
+        "hcp_id": 2, # Dr Michael Brown
         "date": "2026-07-08",
         "time": "14:30",
         "interaction_type": "Meeting",
         "attendees": ["Nurse Kelly"],
         "topics_discussed": "Discussed oncology treatment plans and side effect profile of OncoBoost.",
-        "materials_shared": [{"id": 1, "name": "OncoBoost Phase III Clinical Trial Results PDF"}],
-        "samples_distributed": [{"id": 1, "name": "OncoBoost", "quantity": 2}],
+        "materials_shared": [{"id": 1, "name": "OncoBoost Brochure"}],
+        "samples_distributed": [{"id": 1, "name": "OncoBoost 10mg", "quantity": 2}],
         "sentiment": "Positive",
         "outcomes": "Doctor agreed to prescribe OncoBoost for next 3 eligible patients.",
         "follow_up_actions": "Send additional brochures.",
         "ai_suggested_followups": ["Schedule follow-up meeting in 2 weeks"]
     }
-    res = requests.post(f"{API_BASE}/interactions", json=payload)
+    res = requests.post(f"{API_BASE}/interaction", json=payload)
     assert res.status_code == 200, res.text
     create_data = res.json()
     print(f"Success! Response: {json.dumps(create_data, indent=2)}")
@@ -57,7 +60,7 @@ def run_tests():
 
     # Test 5: Fetch Interactions List (Read operation)
     print("\n--- Test 5: Fetching Logged Interactions List (Read) ---")
-    res = requests.get(f"{API_BASE}/interactions")
+    res = requests.get(f"{API_BASE}/history")
     assert res.status_code == 200
     interactions = res.json()
     print(f"Success! Retrieved {len(interactions)} logged records in CRM database.")
@@ -69,8 +72,9 @@ def run_tests():
     # Test 6: AI Chat Logging and Entity Extraction
     print("\n--- Test 6: Testing Conversational AI agent (Entity Extraction & Summarization) ---")
     chat_payload = {
-        "message": "I had a call with Dr. Jenkins today. We discussed CardioCare dosing and safety. She was positive. I gave her 3 samples of CardioCare and shared the CardioCare brochure.",
+        "message": "I had a call with Dr Sarah Jenkins today. We discussed CardioX dosing and safety. She was positive. I gave her 3 samples of CardioX and shared the Cardiology Flyer.",
         "current_form_state": {
+            "id": None,
             "hcp_id": 0,
             "date": "",
             "time": "",
@@ -96,7 +100,7 @@ def run_tests():
     print(json.dumps(chat_response["form_state"], indent=2))
     
     extracted_form = chat_response["form_state"]
-    assert extracted_form["hcp_id"] == 1, f"Expected hcp_id 1 (Dr. Jenkins), got {extracted_form['hcp_id']}"
+    assert extracted_form["hcp_id"] == 1, f"Expected hcp_id 1 (Dr Sarah Jenkins), got {extracted_form['hcp_id']}"
     assert extracted_form["sentiment"] == "Positive", f"Expected sentiment Positive, got {extracted_form['sentiment']}"
     assert len(extracted_form["samples_distributed"]) > 0, "Expected samples distributed to be extracted"
     print("Success! Conversational extraction correct.")
@@ -105,13 +109,13 @@ def run_tests():
     print("\n--- Test 7: Updating Interaction via Form (Update) ---")
     update_payload = payload.copy()
     update_payload["outcomes"] = "Updated outcome for Dr. Robert Chen."
-    res = requests.put(f"{API_BASE}/interactions/{interaction_id}", json=update_payload)
+    res = requests.put(f"{API_BASE}/interaction/{interaction_id}", json=update_payload)
     assert res.status_code == 200, res.text
     update_data = res.json()
     print(f"Success! Response: {json.dumps(update_data, indent=2)}")
 
     # Verify update in DB
-    res = requests.get(f"{API_BASE}/interactions")
+    res = requests.get(f"{API_BASE}/history")
     interactions = res.json()
     matching = [i for i in interactions if i["id"] == interaction_id][0]
     assert matching["outcomes"] == "Updated outcome for Dr. Robert Chen.", f"Got outcomes: {matching['outcomes']}"
@@ -119,13 +123,13 @@ def run_tests():
 
     # Test 8: Delete Interaction (Delete operation)
     print("\n--- Test 8: Deleting Interaction (Delete) ---")
-    res = requests.delete(f"{API_BASE}/interactions/{interaction_id}")
+    res = requests.delete(f"{API_BASE}/interaction/{interaction_id}")
     assert res.status_code == 200
     delete_data = res.json()
     print(f"Success! Response: {json.dumps(delete_data, indent=2)}")
 
     # Verify deletion in DB
-    res = requests.get(f"{API_BASE}/interactions")
+    res = requests.get(f"{API_BASE}/history")
     interactions = res.json()
     matching = [i for i in interactions if i["id"] == interaction_id]
     assert len(matching) == 0, "Interaction was not deleted from DB"

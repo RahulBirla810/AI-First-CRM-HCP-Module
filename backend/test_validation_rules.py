@@ -6,7 +6,7 @@ import sys
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-API_BASE = "https://ai-first-crm-hcp-module-production-0ddc.up.railway.app"
+API_BASE = "http://localhost:8000"
 
 def test_production_rules():
     print("==================================================")
@@ -21,40 +21,40 @@ def test_production_rules():
         "time": "14:00",
         "interaction_type": "Meeting",
         "attendees": [],
-        "topics_discussed": "Discussed CardioCare",
+        "topics_discussed": "Discussed CardioX",
         "materials_shared": [],
-        "samples_distributed": [{"id": 2, "name": "CardioCare", "quantity": 10}], # Distribute 10
+        "samples_distributed": [{"id": 2, "name": "CardioX", "quantity": 10}], # Distribute 10
         "sentiment": "Neutral",
         "outcomes": "None",
         "follow_up_actions": "",
         "ai_suggested_followups": []
     }
     
-    # We query the current stock of CardioCare first
-    # Seed CardioCare stock is 250
-    res = requests.get(f"{API_BASE}/materials-samples")
-    samples = res.json()["samples"]
-    cardiocare_stock_before = next(s["stock_quantity"] for s in samples if s["id"] == 2)
-    print(f"CardioCare stock before distribution: {cardiocare_stock_before}")
+    # We query the current stock of CardioX first
+    # Seed CardioX stock is 250
+    res = requests.get(f"{API_BASE}/samples")
+    samples = res.json()
+    cardiox_stock_before = next(s["stock_quantity"] for s in samples if s["id"] == 2)
+    print(f"CardioX stock before distribution: {cardiox_stock_before}")
 
     # Log interaction
-    res = requests.post(f"{API_BASE}/interactions", json=payload)
-    assert res.status_code == 200
+    res = requests.post(f"{API_BASE}/interaction", json=payload)
+    assert res.status_code == 200, res.text
     inter_id = res.json()["id"]
     print(f"Logged baseline interaction #{inter_id}")
 
     # Verify stock decremented by 10
-    res = requests.get(f"{API_BASE}/materials-samples")
-    samples = res.json()["samples"]
-    cardiocare_stock_after = next(s["stock_quantity"] for s in samples if s["id"] == 2)
-    print(f"CardioCare stock after distributing 10: {cardiocare_stock_after}")
-    assert cardiocare_stock_before - cardiocare_stock_after == 10
+    res = requests.get(f"{API_BASE}/samples")
+    samples = res.json()
+    cardiox_stock_after = next(s["stock_quantity"] for s in samples if s["id"] == 2)
+    print(f"CardioX stock after distributing 10: {cardiox_stock_after}")
+    assert cardiox_stock_before - cardiox_stock_after == 10
 
     # Step 2: Test duplicate follow-up task prevention
     print("\n--- Step 2: Testing Duplicate Follow-up Task Prevention ---")
     # First, let's call the chat agent to create a task
     chat_payload = {
-        "message": f"Create follow-up task 'Send CardioCare brochure' due on 2026-07-20 for interaction {inter_id}"
+        "message": f"Create follow-up task 'Send CardioX flyer' due on 2026-07-20 for interaction {inter_id}"
     }
     res = requests.post(f"{API_BASE}/chat", json=chat_payload)
     print("First task creation response:")
@@ -70,9 +70,9 @@ def test_production_rules():
 
     # Step 3: Test Insufficient Stock Prevention
     print("\n--- Step 3: Testing Insufficient Stock Prevention ---")
-    # CardioCare current stock is ~240. Let's try distributing 1000 units.
+    # CardioX current stock is ~240. Let's try distributing 1000 units.
     chat_payload_exceeded = {
-        "message": "I met Dr. Sarah Jenkins and gave her 1000 samples of CardioCare. Log this interaction."
+        "message": "I met Dr Sarah Jenkins and gave her 1000 samples of CardioX. Log this interaction."
     }
     res = requests.post(f"{API_BASE}/chat", json=chat_payload_exceeded)
     print("Log interaction with insufficient stock response:")
@@ -83,26 +83,25 @@ def test_production_rules():
 
     # Step 4: Test Stock Restoration on Edit
     print("\n--- Step 4: Testing Stock Restoration & Adjustment on Edit ---")
-    # Interaction has 10 CardioCare. Let's update it to distribute 15 CardioCare.
+    # Interaction has 10 CardioX. Let's update it to distribute 15 CardioX.
     # Stock should restore 10 (returns to 250) and deduct 15 (ends at 235).
-    # We call edit_interaction via chat or direct PUT
     update_payload = payload.copy()
-    update_payload["samples_distributed"] = [{"id": 2, "name": "CardioCare", "quantity": 15}]
+    update_payload["samples_distributed"] = [{"id": 2, "name": "CardioX", "quantity": 15}]
     
-    res = requests.put(f"{API_BASE}/interactions/{inter_id}", json=update_payload)
-    assert res.status_code == 200
+    res = requests.put(f"{API_BASE}/interaction/{inter_id}", json=update_payload)
+    assert res.status_code == 200, res.text
     print("Updated interaction details successfully.")
 
     # Verify final stock
-    res = requests.get(f"{API_BASE}/materials-samples")
-    samples = res.json()["samples"]
-    cardiocare_stock_final = next(s["stock_quantity"] for s in samples if s["id"] == 2)
-    print(f"CardioCare stock after editing distribution to 15: {cardiocare_stock_final}")
-    assert cardiocare_stock_before - cardiocare_stock_final == 15
+    res = requests.get(f"{API_BASE}/samples")
+    samples = res.json()
+    cardiox_stock_final = next(s["stock_quantity"] for s in samples if s["id"] == 2)
+    print(f"CardioX stock after editing distribution to 15: {cardiox_stock_final}")
+    assert cardiox_stock_before - cardiox_stock_final == 15
     print("Success! Stock was correctly restored and adjusted during edit.")
 
     # Cleanup
-    requests.delete(f"{API_BASE}/interactions/{inter_id}")
+    requests.delete(f"{API_BASE}/interaction/{inter_id}")
     print("\nCleaned up test interaction.")
     
     print("\n==================================================")

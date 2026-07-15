@@ -50,10 +50,10 @@ class Interaction(Base):
     ai_suggested_followups = Column(Text) # JSON string of recommended next steps
 
     hcp = relationship("HCP", back_populates="interactions")
-    tasks = relationship("FollowUpTask", back_populates="interaction", cascade="all, delete-orphan")
+    tasks = relationship("Followup", back_populates="interaction", cascade="all, delete-orphan")
 
-class FollowUpTask(Base):
-    __tablename__ = "follow_up_tasks"
+class Followup(Base):
+    __tablename__ = "followups"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)

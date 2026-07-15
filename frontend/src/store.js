@@ -1,4 +1,5 @@
 import { configureStore, createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
@@ -20,54 +21,52 @@ const initialFormState = {
   ai_suggested_followups: []
 };
 
-// Async Thunks
+// Async Thunks using Axios
 export const fetchMetadata = createAsyncThunk('app/fetchMetadata', async () => {
-  const [hcpsRes, matSamRes, listRes] = await Promise.all([
-    fetch(`${API_BASE}/hcps`),
-    fetch(`${API_BASE}/materials-samples`),
-    fetch(`${API_BASE}/interactions`)
+  const [hcpsRes, matRes, samRes, listRes] = await Promise.all([
+    axios.get(`${API_BASE}/hcps`),
+    axios.get(`${API_BASE}/materials`),
+    axios.get(`${API_BASE}/samples`),
+    axios.get(`${API_BASE}/history`)
   ]);
-  const hcps = await hcpsRes.json();
-  const matSam = await matSamRes.json();
-  const list = await listRes.json();
-  return { hcps, materials: matSam.materials, samples: matSam.samples, interactions: list };
+  return {
+    hcps: hcpsRes.data,
+    materials: matRes.data,
+    samples: samRes.data,
+    interactions: listRes.data
+  };
 });
 
 export const fetchInteractions = createAsyncThunk('app/fetchInteractions', async () => {
-  const res = await fetch(`${API_BASE}/interactions`);
-  return await res.json();
+  const res = await axios.get(`${API_BASE}/history`);
+  return res.data;
 });
 
 export const sendChatMessage = createAsyncThunk(
   'chat/sendMessage',
   async ({ message, currentForm }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          session_id: 'session_' + (currentForm.hcp_id || 'default'),
-          current_form_state: {
-            hcp_id: currentForm.hcp_id ? parseInt(currentForm.hcp_id) : 0,
-            date: currentForm.date,
-            time: currentForm.time,
-            interaction_type: currentForm.interaction_type,
-            attendees: currentForm.attendees,
-            topics_discussed: currentForm.topics_discussed,
-            materials_shared: currentForm.materials_shared,
-            samples_distributed: currentForm.samples_distributed,
-            sentiment: currentForm.sentiment,
-            outcomes: currentForm.outcomes,
-            follow_up_actions: currentForm.follow_up_actions,
-            ai_suggested_followups: currentForm.ai_suggested_followups
-          }
-        })
+      const response = await axios.post(`${API_BASE}/chat`, {
+        message,
+        session_id: 'session_' + (currentForm.hcp_id || 'default'),
+        current_form_state: {
+          hcp_id: currentForm.hcp_id ? parseInt(currentForm.hcp_id) : 0,
+          date: currentForm.date,
+          time: currentForm.time,
+          interaction_type: currentForm.interaction_type,
+          attendees: currentForm.attendees,
+          topics_discussed: currentForm.topics_discussed,
+          materials_shared: currentForm.materials_shared,
+          samples_distributed: currentForm.samples_distributed,
+          sentiment: currentForm.sentiment,
+          outcomes: currentForm.outcomes,
+          follow_up_actions: currentForm.follow_up_actions,
+          ai_suggested_followups: currentForm.ai_suggested_followups
+        }
       });
-      if (!response.ok) throw new Error('Failed to send message');
-      return await response.json();
+      return response.data;
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue(err.response?.data?.detail || err.message);
     }
   }
 );
@@ -77,9 +76,7 @@ export const saveInteraction = createAsyncThunk(
   async (formData, { dispatch, rejectWithValue }) => {
     try {
       const isEdit = formData.id !== null;
-      const url = isEdit ? `${API_BASE}/interactions/${formData.id}` : `${API_BASE}/interactions`;
-      const method = isEdit ? 'PUT' : 'POST';
-      
+      const url = isEdit ? `${API_BASE}/interaction/${formData.id}` : `${API_BASE}/interaction`;
       const payload = {
         hcp_id: parseInt(formData.hcp_id),
         date: formData.date,
@@ -95,18 +92,14 @@ export const saveInteraction = createAsyncThunk(
         ai_suggested_followups: formData.ai_suggested_followups
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const response = isEdit 
+        ? await axios.put(url, payload) 
+        : await axios.post(url, payload);
       
-      if (!response.ok) throw new Error('Failed to save interaction');
-      const data = await response.json();
       dispatch(fetchInteractions());
-      return data;
+      return response.data;
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue(err.response?.data?.detail || err.message);
     }
   }
 );
@@ -115,14 +108,11 @@ export const deleteInteraction = createAsyncThunk(
   'form/delete',
   async (id, { dispatch, rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/interactions/${id}`, {
-        method: 'DELETE'
-      });
-      if (!response.ok) throw new Error('Failed to delete interaction');
+      await axios.delete(`${API_BASE}/interaction/${id}`);
       dispatch(fetchInteractions());
       return id;
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue(err.response?.data?.detail || err.message);
     }
   }
 );
@@ -192,7 +182,7 @@ const chatSlice = createSlice({
     messages: [
       {
         sender: 'assistant',
-        text: "Hello! I am your AI CRM Assistant. You can describe your latest HCP interaction in plain text here (e.g. *'I met Dr. Jenkins at 3 PM today. We talked about OncoBoost trial results, she had positive sentiment, and I gave her 3 samples. We scheduled follow-up in 2 weeks.'*), and I will extract the details and auto-populate the form on the left in real-time.",
+        text: "Hello! I am your AI CRM Assistant. Describe your latest HCP interaction in plain text (e.g. *'I met Dr Sarah Jenkins today. We discussed Cardiology Flyer, she had positive sentiment, and I distributed 3 samples of CardioX. Follow-up after two weeks.'*), and I will extract the details and auto-populate the form on the left in real-time.",
         tools_called: []
       }
     ],

@@ -62,34 +62,59 @@ def search_hcp(query: str) -> str:
         db.close()
 
 @tool
-def get_marketing_materials_and_samples() -> str:
+def search_materials(query: str) -> str:
     """
-    Retrieve lists of available drug samples (dosage and stock quantity) and 
-    marketing/promotional materials (such as PDFs, trial brochures, or sheets).
+    Search promotional or educational materials by name.
+    Args:
+        query: Name or keywords of the material (e.g. 'Onco', 'Flyer').
     Returns:
-        JSON string containing success state and catalog lists.
+        JSON string containing success state and list of matching materials.
     """
     db = SessionLocal()
     try:
-        materials = db.query(models.Material).all()
-        samples = db.query(models.Sample).all()
-        
-        m_list = [{"id": m.id, "name": m.name, "type": m.type, "description": m.description} for m in materials]
-        s_list = [{"id": s.id, "name": s.name, "dosage": s.dosage, "stock": s.stock_quantity} for s in samples]
-        
+        materials = db.query(models.Material).filter(
+            models.Material.name.ilike(f"%{query}%")
+        ).all()
+        result = [{"id": m.id, "name": m.name, "type": m.type, "description": m.description} for m in materials]
         return json.dumps({
             "success": True,
-            "message": "Fetched materials and samples successfully.",
-            "data": {
-                "available_materials": m_list,
-                "available_samples": s_list
-            }
+            "message": f"Found {len(result)} materials matching '{query}'",
+            "data": result
         }, indent=2)
     except Exception as e:
         db.rollback()
         return json.dumps({
             "success": False,
-            "error": f"Failed to retrieve catalog: {str(e)}"
+            "error": f"Failed to search materials: {str(e)}"
+        })
+    finally:
+        db.close()
+
+@tool
+def search_samples(query: str) -> str:
+    """
+    Search available drug samples by name.
+    Args:
+        query: Name or keywords of the sample (e.g. 'Onco', 'Cardio').
+    Returns:
+        JSON string containing success state and list of matching samples.
+    """
+    db = SessionLocal()
+    try:
+        samples = db.query(models.Sample).filter(
+            models.Sample.name.ilike(f"%{query}%")
+        ).all()
+        result = [{"id": s.id, "name": s.name, "dosage": s.dosage, "stock": s.stock_quantity} for s in samples]
+        return json.dumps({
+            "success": True,
+            "message": f"Found {len(result)} drug samples matching '{query}'",
+            "data": result
+        }, indent=2)
+    except Exception as e:
+        db.rollback()
+        return json.dumps({
+            "success": False,
+            "error": f"Failed to search samples: {str(e)}"
         })
     finally:
         db.close()
@@ -126,9 +151,9 @@ def create_followup_task(
             })
             
         # 2. Prevent duplicate tasks with the same title for the same interaction
-        existing = db.query(models.FollowUpTask).filter(
-            models.FollowUpTask.interaction_id == interaction_id,
-            models.FollowUpTask.title == title
+        existing = db.query(models.Followup).filter(
+            models.Followup.interaction_id == interaction_id,
+            models.Followup.title == title
         ).first()
         if existing:
             return json.dumps({
@@ -137,7 +162,7 @@ def create_followup_task(
             })
             
         # 3. Create task
-        new_task = models.FollowUpTask(
+        new_task = models.Followup(
             title=title,
             due_date=due_date,
             status="Pending",
