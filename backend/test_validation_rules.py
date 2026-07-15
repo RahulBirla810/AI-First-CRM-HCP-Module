@@ -6,7 +6,7 @@ import sys
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-API_BASE = "http://localhost:8000"
+API_BASE = "https://ai-first-crm-hcp-module-production-0ddc.up.railway.app"
 
 def test_production_rules():
     print("==================================================")
@@ -54,7 +54,22 @@ def test_production_rules():
     print("\n--- Step 2: Testing Duplicate Follow-up Task Prevention ---")
     # First, let's call the chat agent to create a task
     chat_payload = {
-        "message": f"Create follow-up task 'Send CardioX flyer' due on 2026-07-20 for interaction {inter_id}"
+        "message": f"Create follow-up task 'Send CardioX flyer' due on 2026-07-20 for interaction {inter_id}",
+        "current_form_state": {
+            "id": inter_id,
+            "hcp_id": 1,
+            "date": "2026-07-09",
+            "time": "14:00",
+            "interaction_type": "Meeting",
+            "attendees": [],
+            "topics_discussed": "Discussed CardioX",
+            "materials_shared": [],
+            "samples_distributed": [{"id": 2, "name": "CardioX", "quantity": 10}],
+            "sentiment": "Neutral",
+            "outcomes": "None",
+            "follow_up_actions": "",
+            "ai_suggested_followups": []
+        }
     }
     res = requests.post(f"{API_BASE}/chat", json=chat_payload)
     print("First task creation response:")

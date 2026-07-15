@@ -1,7 +1,7 @@
 import requests
 import json
 
-API_BASE = "http://localhost:8000"
+API_BASE = "https://ai-first-crm-hcp-module-production-0ddc.up.railway.app"
 
 def run_tests():
     print("==================================================")
